@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
 
-const protectedPrefixes = ["/leagues", "/api/leagues", "/api/draft"];
+const protectedPrefixes = ["/profile", "/leagues", "/api/leagues", "/api/draft"];
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 export async function middleware(request: NextRequest) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Trophy } from "lucide-react";
+import { LogOut, Trophy, User } from "lucide-react";
 import { logout } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -32,6 +32,12 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             </Button>
             {isSignedIn ? (
               <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/profile">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                </Button>
                 <Button asChild size="sm">
                   <Link href="/leagues/11111111-1111-4111-8111-111111111111/draft">Draft</Link>
                 </Button>
