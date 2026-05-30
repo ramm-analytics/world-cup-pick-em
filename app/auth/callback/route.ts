@@ -23,15 +23,17 @@ export async function GET(request: NextRequest) {
 
   if (user) {
     const username = typeof user.user_metadata.username === "string" ? user.user_metadata.username : null;
-    const displayName =
-      typeof user.user_metadata.display_name === "string"
-        ? user.user_metadata.display_name
-        : user.email?.split("@")[0] ?? "Manager";
+    const name =
+      typeof user.user_metadata.name === "string"
+        ? user.user_metadata.name
+        : typeof user.user_metadata.display_name === "string"
+          ? user.user_metadata.display_name
+          : user.email?.split("@")[0] ?? "Manager";
 
     const profile = await supabase.from("profiles").upsert({
       id: user.id,
       username,
-      display_name: displayName
+      name
     });
 
     if (profile.error) {

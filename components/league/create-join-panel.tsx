@@ -45,12 +45,12 @@ export function CreateJoinPanel() {
             const form = new FormData(event.currentTarget);
             submit("/api/leagues", {
               name: form.get("name") ?? "",
-              displayName: form.get("displayName") ?? "",
+              profileName: form.get("profileName") ?? "",
               maxMembers: form.get("maxMembers") ?? "8"
             });
           }}
         >
-          <Input name="displayName" placeholder="Your display name" />
+          <Input name="profileName" placeholder="Your name" />
           <Input name="name" placeholder="League name" />
           <Input name="maxMembers" type="number" min={2} max={16} defaultValue={8} />
           <Button className="w-full" disabled={isPending}>
@@ -66,11 +66,11 @@ export function CreateJoinPanel() {
             const form = new FormData(event.currentTarget);
             submit("/api/leagues/join", {
               inviteCode: form.get("inviteCode") ?? "",
-              displayName: form.get("joinDisplayName") ?? ""
+              profileName: form.get("joinProfileName") ?? ""
             });
           }}
         >
-          <Input name="joinDisplayName" placeholder="Name" />
+          <Input name="joinProfileName" placeholder="Name" />
           <Input name="inviteCode" placeholder="Invite code" defaultValue="WC2026" />
           <Button className="col-span-2" variant="secondary" disabled={isPending}>
             Join League

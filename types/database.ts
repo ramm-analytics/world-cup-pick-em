@@ -23,7 +23,7 @@ export type NationalTeam = {
 export type Profile = {
   id: string;
   username: string | null;
-  display_name: string;
+  name: string;
   avatar_url: string | null;
   created_at: string;
 };
@@ -104,7 +104,7 @@ export type Database = {
       };
       profiles: {
         Row: DbRecord<Profile>;
-        Insert: DbRecord<Pick<Profile, "id" | "display_name"> & Partial<Pick<Profile, "username" | "avatar_url" | "created_at">>>;
+        Insert: DbRecord<Pick<Profile, "id" | "name"> & Partial<Pick<Profile, "username" | "avatar_url" | "created_at">>>;
         Update: DbRecord<Partial<Profile>>;
         Relationships: [];
       };

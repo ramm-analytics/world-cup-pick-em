@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in before creating a league." }, { status: 401 });
   }
 
-  const { name, displayName, maxMembers } = payload.data;
-  await supabase.from("profiles").upsert({ id: user.id, display_name: displayName });
+  const { name, profileName, maxMembers } = payload.data;
+  await supabase.from("profiles").upsert({ id: user.id, name: profileName });
 
   const league = await supabase
     .from("leagues")
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const member = await supabase.from("league_members").insert({
     league_id: league.data.id,
     user_id: user.id,
-    display_name: displayName,
+    display_name: profileName,
     draft_position: 1
   });
 
