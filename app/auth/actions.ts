@@ -12,9 +12,27 @@ function cleanString(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function getSafeNext(formData: FormData) {
+function getSafeNext(formData: FormData, fallback = "/profile") {
   const next = cleanString(formData.get("next"));
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  return next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
+
+async function getRequestOrigin() {
+  const headerStore = await headers();
+  const origin = headerStore.get("origin");
+
+  if (origin) {
+    return origin;
+  }
+
+  const host = headerStore.get("host");
+  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+
+  if (!host) {
+    throw new Error("Could not determine app URL for auth redirect.");
+  }
+
+  return `${protocol}://${host}`;
 }
 
 export async function loginWithMagicLink(formData: FormData) {
@@ -25,7 +43,7 @@ export async function loginWithMagicLink(formData: FormData) {
     redirectWithMessage("/login", "Enter your email address.");
   }
 
-  const origin = (await headers()).get("origin") ?? "";
+  const origin = await getRequestOrigin();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -51,7 +69,7 @@ export async function signupWithMagicLink(formData: FormData) {
     redirectWithMessage("/signup", "Email, username, and name are required.");
   }
 
-  const origin = (await headers()).get("origin") ?? "";
+  const origin = await getRequestOrigin();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,

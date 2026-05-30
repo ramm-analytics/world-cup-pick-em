@@ -1,11 +1,22 @@
 import Link from "next/link";
 import { CalendarDays, Users } from "lucide-react";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CreateJoinPanel } from "@/components/league/create-join-panel";
 import { Button } from "@/components/ui/button";
 import { demoLeague } from "@/lib/mock-data";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  const { code } = await searchParams;
+
+  if (code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/profile`);
+  }
+
   return (
     <AppShell>
       <section className="container grid gap-8 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">

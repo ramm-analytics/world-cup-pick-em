@@ -23,7 +23,7 @@ export default async function SignupPage({
           </CardHeader>
           <CardContent>
             <form action={signupWithMagicLink} className="space-y-4">
-              <input type="hidden" name="next" value={next ?? "/"} />
+              <input type="hidden" name="next" value={next ?? "/profile"} />
               <Input name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
               <Input name="username" placeholder="username" autoComplete="username" required />
               <Input name="name" placeholder="Name" autoComplete="name" required />

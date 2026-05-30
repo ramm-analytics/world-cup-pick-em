@@ -23,7 +23,7 @@ export default async function LoginPage({
           </CardHeader>
           <CardContent>
             <form action={loginWithMagicLink} className="space-y-4">
-              <input type="hidden" name="next" value={next ?? "/"} />
+              <input type="hidden" name="next" value={next ?? "/profile"} />
               <Input name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
               <Button className="w-full">
                 <Mail className="h-4 w-4" />
