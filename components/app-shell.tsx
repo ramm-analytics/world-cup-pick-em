@@ -1,8 +1,21 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { LogOut, Trophy } from "lucide-react";
+import { logout } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
+import { hasSupabaseEnv } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({ children }: { children: React.ReactNode }) {
+  let isSignedIn = false;
+
+  if (hasSupabaseEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    isSignedIn = Boolean(user);
+  }
+
   return (
     <main className="min-h-screen">
       <header className="border-b bg-card/80 backdrop-blur">
@@ -17,9 +30,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button asChild variant="ghost" size="sm">
               <Link href="/leagues/11111111-1111-4111-8111-111111111111">League</Link>
             </Button>
-            <Button asChild size="sm">
-              <Link href="/leagues/11111111-1111-4111-8111-111111111111/draft">Draft</Link>
-            </Button>
+            {isSignedIn ? (
+              <>
+                <Button asChild size="sm">
+                  <Link href="/leagues/11111111-1111-4111-8111-111111111111/draft">Draft</Link>
+                </Button>
+                <form action={logout}>
+                  <Button type="submit" variant="ghost" size="sm" aria-label="Log out">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <Button asChild size="sm">
+                <Link href="/login">Log in</Link>
+              </Button>
+            )}
           </nav>
         </div>
       </header>

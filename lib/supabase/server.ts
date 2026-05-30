@@ -3,20 +3,24 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import type { Database } from "@/types/database";
+import type { CookieOptions } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function createSupabaseServerClient() {
+type CookieToSet = { name: string; value: string; options: CookieOptions };
+
+export async function createSupabaseServerClient(): Promise<SupabaseClient<Database, "public", "public", Database["public"]>> {
   const cookieStore = await cookies();
 
   if (!env.supabaseUrl || !env.supabaseAnonKey) {
     throw new Error("Missing Supabase environment variables.");
   }
 
-  return createServerClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+  return createServerClient<Database, "public", Database["public"]>(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: CookieToSet[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
@@ -24,7 +28,7 @@ export async function createSupabaseServerClient() {
         }
       }
     }
-  });
+  }) as unknown as SupabaseClient<Database, "public", "public", Database["public"]>;
 }
 
 export function createSupabaseAdminClient() {
