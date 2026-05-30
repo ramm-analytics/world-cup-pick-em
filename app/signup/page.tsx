@@ -26,7 +26,7 @@ export default async function SignupPage({
               <input type="hidden" name="next" value={next ?? "/"} />
               <Input name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
               <Input name="username" placeholder="username" autoComplete="username" required />
-              <Input name="displayName" placeholder="Display name" autoComplete="name" required />
+              <Input name="name" placeholder="Name" autoComplete="name" required />
               <Button className="w-full">
                 <UserPlus className="h-4 w-4" />
                 Send Sign-up Link

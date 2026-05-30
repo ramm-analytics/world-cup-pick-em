@@ -44,11 +44,11 @@ export async function loginWithMagicLink(formData: FormData) {
 export async function signupWithMagicLink(formData: FormData) {
   const email = cleanString(formData.get("email")).toLowerCase();
   const username = cleanString(formData.get("username")).toLowerCase();
-  const displayName = cleanString(formData.get("displayName"));
+  const name = cleanString(formData.get("name"));
   const next = getSafeNext(formData);
 
-  if (!email || !username || !displayName) {
-    redirectWithMessage("/signup", "Email, username, and display name are required.");
+  if (!email || !username || !name) {
+    redirectWithMessage("/signup", "Email, username, and name are required.");
   }
 
   const origin = (await headers()).get("origin") ?? "";
@@ -59,7 +59,7 @@ export async function signupWithMagicLink(formData: FormData) {
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
       data: {
         username,
-        display_name: displayName
+        name
       }
     }
   });
