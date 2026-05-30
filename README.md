@@ -62,7 +62,7 @@ Without Supabase env vars, the app runs in demo mode with seeded in-memory data 
 
 ## Supabase Setup
 
-The initial migration lives in `supabase/migrations/001_initial_schema.sql` and creates:
+Migrations live in `supabase/migrations`. The initial schema creates:
 
 - `profiles`
 - `leagues`
@@ -75,7 +75,20 @@ The initial migration lives in `supabase/migrations/001_initial_schema.sql` and 
 - `player_match_stats`
 - `league_standings` view
 
-Realtime is enabled for `drafts` and `draft_picks`. The browser draft room subscribes to those tables so other managers see picks and clock changes quickly.
+The auth MVP migration adds `profiles.username` and tightens profile RLS so authenticated users can only read, insert, or update their own profile row. Realtime is enabled for `drafts` and `draft_picks`. The browser draft room subscribes to those tables so other managers see picks and clock changes quickly.
+
+Run migrations locally with the Supabase CLI:
+
+```bash
+supabase start
+supabase db reset
+```
+
+For an already-running local database, use:
+
+```bash
+supabase migration up
+```
 
 For hosted Supabase:
 
@@ -134,7 +147,6 @@ vercel
 
 ## MVP Gaps To Expand Later
 
-- Supabase Auth screens and profile onboarding
 - League creation/join server actions
 - Draft start/admin controls
 - Pick timers with auto-pick
