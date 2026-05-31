@@ -17,8 +17,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in before creating a league." }, { status: 401 });
   }
 
-  const { name, profileName, maxMembers } = payload.data;
-  await supabase.from("profiles").upsert({ id: user.id, name: profileName });
+  const { name, maxMembers } = payload.data;
+  const profile = await supabase.from("profiles").select("name").eq("id", user.id).single();
+
+  if (profile.error || !profile.data) {
+    return NextResponse.json({ error: "Create your profile before creating a league." }, { status: 400 });
+  }
 
   const league = await supabase
     .from("leagues")
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
   const member = await supabase.from("league_members").insert({
     league_id: league.data.id,
     user_id: user.id,
-    display_name: profileName,
+    display_name: profile.data.name,
     draft_position: 1
   });
 
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: member.error.message }, { status: 400 });
   }
 
-  await supabase.from("drafts").insert({
+  const draft = await supabase.from("drafts").insert({
     league_id: league.data.id,
     status: "pending",
     current_pick_number: 1,
@@ -64,6 +68,10 @@ export async function POST(request: Request) {
     started_at: null,
     completed_at: null
   });
+
+  if (draft.error) {
+    return NextResponse.json({ error: draft.error.message }, { status: 400 });
+  }
 
   return NextResponse.json({ league: league.data });
 }
