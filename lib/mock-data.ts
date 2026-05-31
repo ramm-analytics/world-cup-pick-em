@@ -55,20 +55,20 @@ export const demoMembers: LeagueMember[] = [
 ];
 
 export const demoTeams: NationalTeam[] = [
-  { id: "44444444-4444-4444-8444-444444444441", fifa_code: "USA", name: "United States", confederation: "CONCACAF", group_name: "D", flag_emoji: "US" },
-  { id: "44444444-4444-4444-8444-444444444442", fifa_code: "MEX", name: "Mexico", confederation: "CONCACAF", group_name: "A", flag_emoji: "MX" },
-  { id: "44444444-4444-4444-8444-444444444443", fifa_code: "ARG", name: "Argentina", confederation: "CONMEBOL", group_name: "C", flag_emoji: "AR" },
-  { id: "44444444-4444-4444-8444-444444444444", fifa_code: "BRA", name: "Brazil", confederation: "CONMEBOL", group_name: "E", flag_emoji: "BR" },
-  { id: "44444444-4444-4444-8444-444444444445", fifa_code: "FRA", name: "France", confederation: "UEFA", group_name: "F", flag_emoji: "FR" },
-  { id: "44444444-4444-4444-8444-444444444446", fifa_code: "ENG", name: "England", confederation: "UEFA", group_name: "G", flag_emoji: "EN" }
+  { id: "44444444-4444-4444-8444-444444444441", fifa_code: "USA", name: "United States", confederation: "CONCACAF", group_name: "D", flag_emoji: "US", external_source: null, external_id: null, logo_url: null },
+  { id: "44444444-4444-4444-8444-444444444442", fifa_code: "MEX", name: "Mexico", confederation: "CONCACAF", group_name: "A", flag_emoji: "MX", external_source: null, external_id: null, logo_url: null },
+  { id: "44444444-4444-4444-8444-444444444443", fifa_code: "ARG", name: "Argentina", confederation: "CONMEBOL", group_name: "C", flag_emoji: "AR", external_source: null, external_id: null, logo_url: null },
+  { id: "44444444-4444-4444-8444-444444444444", fifa_code: "BRA", name: "Brazil", confederation: "CONMEBOL", group_name: "E", flag_emoji: "BR", external_source: null, external_id: null, logo_url: null },
+  { id: "44444444-4444-4444-8444-444444444445", fifa_code: "FRA", name: "France", confederation: "UEFA", group_name: "F", flag_emoji: "FR", external_source: null, external_id: null, logo_url: null },
+  { id: "44444444-4444-4444-8444-444444444446", fifa_code: "ENG", name: "England", confederation: "UEFA", group_name: "G", flag_emoji: "EN", external_source: null, external_id: null, logo_url: null }
 ];
 
 export const demoPlayers: Player[] = [
-  { id: "55555555-5555-4555-8555-555555555551", team_id: demoTeams[2].id, name: "Lionel Messi", position: "FW", club: "Inter Miami", projected_points: 54, national_teams: { name: "Argentina", flag_emoji: "AR", fifa_code: "ARG" } },
-  { id: "55555555-5555-4555-8555-555555555552", team_id: demoTeams[4].id, name: "Kylian Mbappe", position: "FW", club: "Real Madrid", projected_points: 56, national_teams: { name: "France", flag_emoji: "FR", fifa_code: "FRA" } },
-  { id: "55555555-5555-4555-8555-555555555553", team_id: demoTeams[3].id, name: "Vinicius Junior", position: "FW", club: "Real Madrid", projected_points: 50, national_teams: { name: "Brazil", flag_emoji: "BR", fifa_code: "BRA" } },
-  { id: "55555555-5555-4555-8555-555555555554", team_id: demoTeams[5].id, name: "Jude Bellingham", position: "MF", club: "Real Madrid", projected_points: 46, national_teams: { name: "England", flag_emoji: "EN", fifa_code: "ENG" } },
-  { id: "55555555-5555-4555-8555-555555555555", team_id: demoTeams[0].id, name: "Christian Pulisic", position: "FW", club: "AC Milan", projected_points: 42, national_teams: { name: "United States", flag_emoji: "US", fifa_code: "USA" } }
+  { id: "55555555-5555-4555-8555-555555555551", team_id: demoTeams[2].id, name: "Lionel Messi", position: "FW", club: "Inter Miami", projected_points: 54, external_source: null, external_id: null, photo_url: null, national_teams: { name: "Argentina", flag_emoji: "AR", fifa_code: "ARG" } },
+  { id: "55555555-5555-4555-8555-555555555552", team_id: demoTeams[4].id, name: "Kylian Mbappe", position: "FW", club: "Real Madrid", projected_points: 56, external_source: null, external_id: null, photo_url: null, national_teams: { name: "France", flag_emoji: "FR", fifa_code: "FRA" } },
+  { id: "55555555-5555-4555-8555-555555555553", team_id: demoTeams[3].id, name: "Vinicius Junior", position: "FW", club: "Real Madrid", projected_points: 50, external_source: null, external_id: null, photo_url: null, national_teams: { name: "Brazil", flag_emoji: "BR", fifa_code: "BRA" } },
+  { id: "55555555-5555-4555-8555-555555555554", team_id: demoTeams[5].id, name: "Jude Bellingham", position: "MF", club: "Real Madrid", projected_points: 46, external_source: null, external_id: null, photo_url: null, national_teams: { name: "England", flag_emoji: "EN", fifa_code: "ENG" } },
+  { id: "55555555-5555-4555-8555-555555555555", team_id: demoTeams[0].id, name: "Christian Pulisic", position: "FW", club: "AC Milan", projected_points: 42, external_source: null, external_id: null, photo_url: null, national_teams: { name: "United States", flag_emoji: "US", fifa_code: "USA" } }
 ];
 
 export const demoDraft: Draft = {

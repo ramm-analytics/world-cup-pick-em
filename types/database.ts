@@ -10,6 +10,7 @@ type DbRecord<T> = T & Record<string, unknown>;
 
 export type DraftableType = "team" | "player";
 export type DraftStatus = "pending" | "active" | "complete";
+export type MatchStage = "group" | "round_of_32" | "round_of_16" | "quarterfinal" | "semifinal" | "third_place" | "final";
 
 export type NationalTeam = {
   id: string;
@@ -18,6 +19,9 @@ export type NationalTeam = {
   confederation: string;
   group_name: string | null;
   flag_emoji: string;
+  external_source: string | null;
+  external_id: string | null;
+  logo_url: string | null;
 };
 
 export type Profile = {
@@ -35,7 +39,49 @@ export type Player = {
   position: string;
   club: string | null;
   projected_points: number;
+  external_source: string | null;
+  external_id: string | null;
+  photo_url: string | null;
   national_teams?: Pick<NationalTeam, "name" | "flag_emoji" | "fifa_code">;
+};
+
+export type Match = {
+  id: string;
+  stage: MatchStage;
+  home_team_id: string;
+  away_team_id: string;
+  starts_at: string;
+  home_score: number | null;
+  away_score: number | null;
+  is_final: boolean;
+  external_source: string | null;
+  external_id: string | null;
+  match_number: number | null;
+  status: string | null;
+  venue: string | null;
+};
+
+export type PlayerMatchStat = {
+  id: string;
+  match_id: string;
+  player_id: string;
+  goals: number;
+  assists: number;
+  clean_sheet: boolean;
+  minutes: number;
+  external_source: string | null;
+  external_id: string | null;
+};
+
+export type DataSyncRun = {
+  id: string;
+  source: string;
+  mode: string;
+  status: "running" | "success" | "partial" | "skipped" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  counts: Json;
+  error: string | null;
 };
 
 export type League = {
@@ -116,14 +162,41 @@ export type Database = {
       };
       national_teams: {
         Row: DbRecord<NationalTeam>;
-        Insert: DbRecord<Omit<NationalTeam, "id"> & Partial<Pick<NationalTeam, "id">>>;
+        Insert: DbRecord<
+          Omit<NationalTeam, "id" | "external_source" | "external_id" | "logo_url"> &
+            Partial<Pick<NationalTeam, "id" | "external_source" | "external_id" | "logo_url">>
+        >;
         Update: DbRecord<Partial<NationalTeam>>;
         Relationships: [];
       };
       players: {
         Row: DbRecord<Player>;
-        Insert: DbRecord<Omit<Player, "id" | "national_teams"> & Partial<Pick<Player, "id">>>;
+        Insert: DbRecord<
+          Omit<Player, "id" | "national_teams" | "external_source" | "external_id" | "photo_url"> &
+            Partial<Pick<Player, "id" | "external_source" | "external_id" | "photo_url">>
+        >;
         Update: DbRecord<Partial<Omit<Player, "national_teams">>>;
+        Relationships: [];
+      };
+      matches: {
+        Row: DbRecord<Match>;
+        Insert: DbRecord<Omit<Match, "id"> & Partial<Pick<Match, "id">>>;
+        Update: DbRecord<Partial<Match>>;
+        Relationships: [];
+      };
+      player_match_stats: {
+        Row: DbRecord<PlayerMatchStat>;
+        Insert: DbRecord<Omit<PlayerMatchStat, "id"> & Partial<Pick<PlayerMatchStat, "id">>>;
+        Update: DbRecord<Partial<PlayerMatchStat>>;
+        Relationships: [];
+      };
+      data_sync_runs: {
+        Row: DbRecord<DataSyncRun>;
+        Insert: DbRecord<
+          Omit<DataSyncRun, "id" | "started_at" | "finished_at" | "counts" | "error"> &
+            Partial<Pick<DataSyncRun, "id" | "started_at" | "finished_at" | "counts" | "error">>
+        >;
+        Update: DbRecord<Partial<DataSyncRun>>;
         Relationships: [];
       };
       drafts: {
@@ -149,6 +222,7 @@ export type Database = {
     Enums: {
       draftable_type: DraftableType;
       draft_status: DraftStatus;
+      match_stage: MatchStage;
     };
   };
 };
