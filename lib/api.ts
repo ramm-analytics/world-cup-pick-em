@@ -22,3 +22,18 @@ export async function makeDraftPick(input: MakePickInput) {
 
   return response.json();
 }
+
+export async function startDraft(draftId: string) {
+  const response = await fetch("/api/draft/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ draftId })
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error: "Unable to start draft." }));
+    throw new Error(payload.error ?? "Unable to start draft.");
+  }
+
+  return response.json();
+}

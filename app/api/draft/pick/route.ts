@@ -62,11 +62,13 @@ export async function POST(request: Request) {
       completed_at: isComplete ? new Date().toISOString() : draft.completed_at,
       updated_at: new Date().toISOString()
     })
-    .eq("id", draftId);
+    .eq("id", draftId)
+    .select("*")
+    .single();
 
   if (updated.error) {
     return NextResponse.json({ error: updated.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ pick: inserted.data });
+  return NextResponse.json({ pick: inserted.data, draft: updated.data });
 }
