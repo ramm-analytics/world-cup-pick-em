@@ -5,6 +5,12 @@ export type SyncStatus = "running" | "success" | "partial" | "skipped" | "failed
 export type SyncCounts = {
   apiRequests?: number;
   teams?: number;
+  actualTeams?: number;
+  expectedTeams?: number;
+  removedPlaceholderTeams?: number;
+  removedPlaceholderMatches?: number;
+  removedStaleTeams?: number;
+  removedStaleMatches?: number;
   players?: number;
   matches?: number;
   playerStats?: number;

@@ -15,9 +15,16 @@ import {
   mapApiFootballPlayers,
   mapApiFootballTeams
 } from "@/lib/ingestion/api-football-mappers";
-import { fetchOpenFootballBaseline } from "@/lib/ingestion/openfootball";
+import { EXPECTED_WORLD_CUP_TEAM_COUNT, fetchOpenFootballBaseline } from "@/lib/ingestion/openfootball";
 import type { SyncCounts, SyncMode, SyncResult, SyncStatus } from "@/lib/ingestion/types";
-import { upsertMatches, upsertPlayerMatchStats, upsertPlayers, upsertTeams } from "@/lib/ingestion/upsert";
+import {
+  cleanupPlaceholderNationalTeams,
+  cleanupStaleOpenFootballTeams,
+  upsertMatches,
+  upsertPlayerMatchStats,
+  upsertPlayers,
+  upsertTeams
+} from "@/lib/ingestion/upsert";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function syncWorldCupData(mode: SyncMode): Promise<SyncResult[]> {
@@ -29,9 +36,27 @@ export async function syncWorldCupData(mode: SyncMode): Promise<SyncResult[]> {
     if (expandedMode === "baseline") {
       results.push(await withSyncRun("openfootball", expandedMode, async () => {
         const baseline = await fetchOpenFootballBaseline();
+        const placeholderCleanupCounts = await cleanupPlaceholderNationalTeams(supabase);
+        const staleCleanupCounts = await cleanupStaleOpenFootballTeams(supabase, baseline.teams.map((team) => team.fifaCode));
         const teams = await upsertTeams(supabase, baseline.teams);
         const matches = await upsertMatches(supabase, baseline.matches);
-        return { status: "success", counts: { teams, matches } };
+        const actualTeams = await countActualNationalTeams();
+        const isValidTeamCount = actualTeams === EXPECTED_WORLD_CUP_TEAM_COUNT;
+
+        return {
+          status: isValidTeamCount ? "success" : "partial",
+          counts: {
+            ...placeholderCleanupCounts,
+            ...staleCleanupCounts,
+            teams,
+            matches,
+            actualTeams,
+            expectedTeams: EXPECTED_WORLD_CUP_TEAM_COUNT
+          },
+          error: isValidTeamCount
+            ? undefined
+            : `Expected ${EXPECTED_WORLD_CUP_TEAM_COUNT} national teams, found ${actualTeams}.`
+        };
       }));
       continue;
     }
@@ -203,11 +228,23 @@ async function getApiRequestsUsedToday() {
   }, 0);
 }
 
+async function countActualNationalTeams() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.from("national_teams").select("name");
+  if (error) throw error;
+
+  return (data ?? []).filter((team) => !isPlaceholderTeamName(team.name)).length;
+}
+
 function commonParams() {
   return {
     league: env.apiFootballLeagueId,
     season: env.apiFootballSeason
   };
+}
+
+function isPlaceholderTeamName(name: string) {
+  return /\b(winner|runner-up|runner up|third place|best third|play-?off|path|tbd|to be determined|placeholder)\b/i.test(name);
 }
 
 function expandMode(mode: SyncMode): SyncMode[] {

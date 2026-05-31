@@ -3,6 +3,101 @@ import type { Database } from "@/types/database";
 import type { MatchInput, PlayerInput, PlayerMatchStatInput, TeamInput } from "@/lib/ingestion/types";
 
 type DbClient = SupabaseClient<Database>;
+const placeholderPattern = /\b(winner|runner-up|runner up|third place|best third|play-?off|path|tbd|to be determined|placeholder)\b/i;
+
+export async function cleanupPlaceholderNationalTeams(supabase: DbClient) {
+  const teamsResult = await supabase.from("national_teams").select("id, name");
+  if (teamsResult.error) throw teamsResult.error;
+
+  const placeholderTeamIds = (teamsResult.data ?? [])
+    .filter((team) => placeholderPattern.test(team.name))
+    .map((team) => team.id);
+
+  if (!placeholderTeamIds.length) {
+    return { removedPlaceholderTeams: 0, removedPlaceholderMatches: 0 };
+  }
+
+  const draftPicksResult = await supabase.from("draft_picks").select("national_team_id").in("national_team_id", placeholderTeamIds);
+  if (draftPicksResult.error) throw draftPicksResult.error;
+
+  const draftedPlaceholderTeamIds = new Set((draftPicksResult.data ?? []).flatMap((pick) => pick.national_team_id ? [pick.national_team_id] : []));
+  const removableTeamIds = placeholderTeamIds.filter((teamId) => !draftedPlaceholderTeamIds.has(teamId));
+
+  if (!removableTeamIds.length) {
+    return { removedPlaceholderTeams: 0, removedPlaceholderMatches: 0 };
+  }
+
+  const matchesResult = await supabase.from("matches").select("id, home_team_id, away_team_id");
+  if (matchesResult.error) throw matchesResult.error;
+
+  const removableTeamIdSet = new Set(removableTeamIds);
+  const removableMatchIds = (matchesResult.data ?? [])
+    .filter((match) => removableTeamIdSet.has(match.home_team_id) || removableTeamIdSet.has(match.away_team_id))
+    .map((match) => match.id);
+
+  if (removableMatchIds.length) {
+    const { error } = await supabase.from("matches").delete().in("id", removableMatchIds);
+    if (error) throw error;
+  }
+
+  const deletedPlayers = await supabase.from("players").delete().in("team_id", removableTeamIds);
+  if (deletedPlayers.error) throw deletedPlayers.error;
+  const deletedTeams = await supabase.from("national_teams").delete().in("id", removableTeamIds);
+  if (deletedTeams.error) throw deletedTeams.error;
+
+  return {
+    removedPlaceholderTeams: removableTeamIds.length,
+    removedPlaceholderMatches: removableMatchIds.length
+  };
+}
+
+export async function cleanupStaleOpenFootballTeams(supabase: DbClient, validFifaCodes: string[]) {
+  const teamsResult = await supabase.from("national_teams").select("id, fifa_code").eq("external_source", "openfootball");
+  if (teamsResult.error) throw teamsResult.error;
+
+  const validCodeSet = new Set(validFifaCodes);
+  const staleTeamIds = (teamsResult.data ?? [])
+    .filter((team) => !validCodeSet.has(team.fifa_code))
+    .map((team) => team.id);
+
+  if (!staleTeamIds.length) {
+    return { removedStaleTeams: 0, removedStaleMatches: 0 };
+  }
+
+  const draftPicksResult = await supabase.from("draft_picks").select("national_team_id").in("national_team_id", staleTeamIds);
+  if (draftPicksResult.error) throw draftPicksResult.error;
+
+  const draftedTeamIds = new Set((draftPicksResult.data ?? []).flatMap((pick) => pick.national_team_id ? [pick.national_team_id] : []));
+  const removableTeamIds = staleTeamIds.filter((teamId) => !draftedTeamIds.has(teamId));
+
+  if (!removableTeamIds.length) {
+    return { removedStaleTeams: 0, removedStaleMatches: 0 };
+  }
+
+  const matchesResult = await supabase.from("matches").select("id, home_team_id, away_team_id");
+  if (matchesResult.error) throw matchesResult.error;
+
+  const removableTeamIdSet = new Set(removableTeamIds);
+  const removableMatchIds = (matchesResult.data ?? [])
+    .filter((match) => removableTeamIdSet.has(match.home_team_id) || removableTeamIdSet.has(match.away_team_id))
+    .map((match) => match.id);
+
+  if (removableMatchIds.length) {
+    const { error } = await supabase.from("matches").delete().in("id", removableMatchIds);
+    if (error) throw error;
+  }
+
+  const deletedPlayers = await supabase.from("players").delete().in("team_id", removableTeamIds);
+  if (deletedPlayers.error) throw deletedPlayers.error;
+
+  const deletedTeams = await supabase.from("national_teams").delete().in("id", removableTeamIds);
+  if (deletedTeams.error) throw deletedTeams.error;
+
+  return {
+    removedStaleTeams: removableTeamIds.length,
+    removedStaleMatches: removableMatchIds.length
+  };
+}
 
 export async function upsertTeams(supabase: DbClient, teams: TeamInput[]) {
   if (!teams.length) return 0;

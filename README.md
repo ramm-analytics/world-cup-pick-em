@@ -139,6 +139,7 @@ The app has a server-only ingestion path for World Cup data:
 - `openfootball/worldcup` is the free-safe baseline source for teams and fixtures.
 - API-Football enriches teams, fixtures, standings, players, results, and player stats when an API key and quota are available.
 - `data_sync_runs` records each sync source, mode, status, counts, and errors.
+- Baseline sync ignores knockout placeholders such as winner/runner-up slots, removes existing placeholder rows from `national_teams`, preserves group assignments, and records `actualTeams` versus `expectedTeams` so the data pool can be verified at 48 national teams.
 
 Add these environment variables for ingestion:
 

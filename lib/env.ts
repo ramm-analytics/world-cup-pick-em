@@ -10,7 +10,7 @@ export const env = {
   apiFootballDailyBudget: Number(process.env.API_FOOTBALL_DAILY_BUDGET ?? "90"),
   apiFootballMinIntervalMs: Number(process.env.API_FOOTBALL_MIN_INTERVAL_MS ?? "1500"),
   openFootballWorldCupUrl:
-    process.env.OPENFOOTBALL_WORLD_CUP_URL ?? "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
+    process.env.OPENFOOTBALL_WORLD_CUP_URL ?? "https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa/cup.txt"
 };
 
 export function hasSupabaseEnv() {
