@@ -28,7 +28,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
-              <Link href="/leagues/11111111-1111-4111-8111-111111111111">League</Link>
+              <Link href="/leagues">Leagues</Link>
             </Button>
             {isSignedIn ? (
               <>
@@ -37,9 +37,6 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                     <User className="h-4 w-4" />
                     Profile
                   </Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/leagues/11111111-1111-4111-8111-111111111111/draft">Draft</Link>
                 </Button>
                 <form action={logout}>
                   <Button type="submit" variant="ghost" size="sm" aria-label="Log out">

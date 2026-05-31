@@ -17,12 +17,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in before joining a league." }, { status: 401 });
   }
 
-  const { inviteCode, profileName } = payload.data;
+  const { inviteCode } = payload.data;
   const admin = createSupabaseAdminClient();
-  const league = await admin.from("leagues").select("*").eq("invite_code", inviteCode).single();
+  const [league, profile] = await Promise.all([
+    admin.from("leagues").select("*").eq("invite_code", inviteCode).single(),
+    admin.from("profiles").select("name").eq("id", user.id).single()
+  ]);
 
   if (!league.data) {
     return NextResponse.json({ error: "Invite code not found." }, { status: 404 });
+  }
+
+  if (profile.error || !profile.data) {
+    return NextResponse.json({ error: "Create your profile before joining a league." }, { status: 400 });
   }
 
   const members = await admin
@@ -35,13 +42,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "League is full." }, { status: 409 });
   }
 
-  await admin.from("profiles").upsert({ id: user.id, name: profileName });
-
   const nextDraftPosition = (members.data?.[0]?.draft_position ?? 0) + 1;
   const member = await admin.from("league_members").insert({
     league_id: league.data.id,
     user_id: user.id,
-    display_name: profileName,
+    display_name: profile.data.name,
     draft_position: nextDraftPosition
   });
 

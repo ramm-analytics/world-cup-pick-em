@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CreateJoinPanel } from "@/components/league/create-join-panel";
 import { Button } from "@/components/ui/button";
-import { demoLeague } from "@/lib/mock-data";
 
 export default async function HomePage({
   searchParams
@@ -30,15 +29,15 @@ export default async function HomePage({
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild>
-              <Link href={`/leagues/${demoLeague.id}`}>
+              <Link href="/leagues">
                 <Users className="h-4 w-4" />
-                Open Demo League
+                Your Leagues
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href={`/leagues/${demoLeague.id}/draft`}>
+              <Link href="/profile">
                 <CalendarDays className="h-4 w-4" />
-                Enter Draft Room
+                View Profile
               </Link>
             </Button>
           </div>

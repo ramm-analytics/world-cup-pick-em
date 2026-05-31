@@ -22,6 +22,11 @@ export function CreateJoinPanel() {
       });
       const data = await response.json();
 
+      if (response.status === 401) {
+        router.push("/login?next=/");
+        return;
+      }
+
       if (!response.ok) {
         setError(data.error ?? "Request failed.");
         return;
@@ -45,12 +50,10 @@ export function CreateJoinPanel() {
             const form = new FormData(event.currentTarget);
             submit("/api/leagues", {
               name: form.get("name") ?? "",
-              profileName: form.get("profileName") ?? "",
               maxMembers: form.get("maxMembers") ?? "8"
             });
           }}
         >
-          <Input name="profileName" placeholder="Your name" />
           <Input name="name" placeholder="League name" />
           <Input name="maxMembers" type="number" min={2} max={16} defaultValue={8} />
           <Button className="w-full" disabled={isPending}>
@@ -65,12 +68,10 @@ export function CreateJoinPanel() {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             submit("/api/leagues/join", {
-              inviteCode: form.get("inviteCode") ?? "",
-              profileName: form.get("joinProfileName") ?? ""
+              inviteCode: form.get("inviteCode") ?? ""
             });
           }}
         >
-          <Input name="joinProfileName" placeholder="Name" />
           <Input name="inviteCode" placeholder="Invite code" defaultValue="WC2026" />
           <Button className="col-span-2" variant="secondary" disabled={isPending}>
             Join League
