@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/sync-world-cup?mode=results",
+      "schedule": "0 */4 * * *"
+    }
+  ]
+}

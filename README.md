@@ -132,6 +132,39 @@ Scoring rules are stored on each league as JSON:
 
 The `league_standings` view reads drafted rosters, match results, player stats, and league scoring rules. When match and player-stat rows change, standings are recalculated by Postgres on read.
 
+## World Cup Data Ingestion
+
+The app has a server-only ingestion path for World Cup data:
+
+- `openfootball/worldcup` is the free-safe baseline source for teams and fixtures.
+- API-Football enriches teams, fixtures, standings, players, results, and player stats when an API key and quota are available.
+- `data_sync_runs` records each sync source, mode, status, counts, and errors.
+- Baseline sync ignores knockout placeholders such as winner/runner-up slots, removes existing placeholder rows from `national_teams`, preserves group assignments, and records `actualTeams` versus `expectedTeams` so the data pool can be verified at 48 national teams.
+
+Add these environment variables for ingestion:
+
+```bash
+CRON_SECRET=replace-with-long-random-secret
+API_FOOTBALL_KEY=optional-api-football-key
+API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
+API_FOOTBALL_LEAGUE_ID=1
+API_FOOTBALL_SEASON=2026
+API_FOOTBALL_DAILY_BUDGET=90
+API_FOOTBALL_MIN_INTERVAL_MS=1500
+OPENFOOTBALL_WORLD_CUP_URL=https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
+```
+
+Run a sync manually:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync-world-cup \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"baseline"}'
+```
+
+Supported modes are `baseline`, `api-football-lite`, `api-football-full`, `results`, and `all`. Missing `API_FOOTBALL_KEY` skips API-Football modes without blocking the baseline. `vercel.json` schedules `results` every four hours; Vercel Cron calls the same route with `GET` and the `CRON_SECRET` bearer header.
+
 ## Deployment
 
 1. Create a Supabase project and run the migration.
@@ -139,6 +172,8 @@ The `league_standings` view reads drafted rosters, match results, player stats, 
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
+   - `CRON_SECRET`
+   - `API_FOOTBALL_KEY` when enrichment is enabled
 3. Deploy to Vercel:
 
 ```bash
