@@ -16,3 +16,7 @@ export const draftPickSchema = z.object({
 export const startDraftSchema = z.object({
   draftId: z.string().uuid()
 });
+
+export const pauseDraftSchema = z.object({
+  draftId: z.string().uuid()
+});

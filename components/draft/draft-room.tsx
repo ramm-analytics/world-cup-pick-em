@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { Activity, Check, Clock, Search, Shield, Trophy, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { Activity, Check, Clock, Pause, Search, Shield, Trophy, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { makeDraftPick, startDraft } from "@/lib/api";
+import { makeDraftPick, pauseDraft, startDraft } from "@/lib/api";
 import { buildSnakeDraftOrder, getCurrentTurn } from "@/lib/draft/order";
+import { allowedDraftableTypes } from "@/lib/draft/rules";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Draft, DraftPick, League, LeagueMember, NationalTeam, Player } from "@/types/database";
 
@@ -19,6 +20,7 @@ interface DraftRoomProps {
   picks: DraftPick[];
   teams: NationalTeam[];
   players: Player[];
+  currentUserId: string | null;
   isDemo?: boolean;
 }
 
@@ -31,11 +33,13 @@ function formatClock(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
-export function DraftRoom({ league, members, draft, picks, teams, players, isDemo = false }: DraftRoomProps) {
+export function DraftRoom({ league, members, draft, picks, teams, players, currentUserId, isDemo = false }: DraftRoomProps) {
   const [liveDraft, setLiveDraft] = useState(draft);
   const [livePicks, setLivePicks] = useState(picks);
+  const [syncStatus, setSyncStatus] = useState<"connecting" | "live" | "polling">("connecting");
   const [filter, setFilter] = useState("");
-  const [poolMode, setPoolMode] = useState<PoolMode>("players");
+  const allowedPoolModes = useMemo(() => allowedDraftableTypes(league).map((type) => (type === "team" ? "teams" : "players") as PoolMode), [league]);
+  const [poolMode, setPoolMode] = useState<PoolMode>(allowedPoolModes[0] ?? "teams");
   const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -45,25 +49,81 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
     return () => window.clearInterval(timer);
   }, []);
 
+  const syncDraftState = useCallback(async () => {
+    if (isDemo) return;
+
+    const supabase = createSupabaseBrowserClient();
+    const draftResult = await supabase.from("drafts").select("*").eq("id", draft.id).single() as unknown as { data: Draft | null };
+    const picksResult = await supabase.from("draft_picks").select("*").eq("draft_id", draft.id).order("pick_number") as unknown as { data: DraftPick[] | null };
+
+    if (draftResult.data) {
+      setLiveDraft(draftResult.data);
+    }
+
+    if (picksResult.data) {
+      setLivePicks(picksResult.data);
+    }
+  }, [draft.id, isDemo]);
+
   useEffect(() => {
     if (isDemo) return;
 
     const supabase = createSupabaseBrowserClient();
+    const mergePick = (nextPick: DraftPick) => {
+      setLivePicks((existing) => {
+        const withoutDuplicate = existing.filter((pick) => pick.id !== nextPick.id);
+        return [...withoutDuplicate, nextPick].sort((a, b) => a.pick_number - b.pick_number);
+      });
+    };
+
     const channel = supabase
       .channel(`draft:${draft.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` }, (payload) => {
-        const nextPick = payload.new as DraftPick;
-        setLivePicks((existing) => (existing.some((pick) => pick.id === nextPick.id) ? existing : [...existing, nextPick]));
+      .on("postgres_changes", { event: "*", schema: "public", table: "draft_picks", filter: `draft_id=eq.${draft.id}` }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          setLivePicks((existing) => existing.filter((pick) => pick.id !== (payload.old as Partial<DraftPick>).id));
+          void syncDraftState();
+          return;
+        }
+
+        mergePick(payload.new as DraftPick);
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "drafts", filter: `id=eq.${draft.id}` }, (payload) => {
+        if (payload.eventType === "DELETE") return;
         setLiveDraft(payload.new as Draft);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setSyncStatus("live");
+          void syncDraftState();
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setSyncStatus("polling");
+        }
+      });
+
+    void syncDraftState();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [draft.id, isDemo]);
+  }, [draft.id, isDemo, syncDraftState]);
+
+  useEffect(() => {
+    if (isDemo || liveDraft.status === "complete") return;
+
+    const interval = window.setInterval(() => {
+      void syncDraftState();
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [isDemo, liveDraft.status, syncDraftState]);
+
+  useEffect(() => {
+    if (!allowedPoolModes.includes(poolMode)) {
+      setPoolMode(allowedPoolModes[0] ?? "teams");
+    }
+  }, [allowedPoolModes, poolMode]);
 
   const draftedTeamIds = useMemo(() => new Set(livePicks.map((pick) => pick.national_team_id).filter(Boolean)), [livePicks]);
   const draftedPlayerIds = useMemo(() => new Set(livePicks.map((pick) => pick.player_id).filter(Boolean)), [livePicks]);
@@ -79,6 +139,12 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
   const remainingSeconds = liveDraft.status === "active" ? Math.max(0, liveDraft.seconds_per_pick - elapsedSeconds) : liveDraft.seconds_per_pick;
   const isDraftActive = liveDraft.status === "active";
   const isDraftPending = liveDraft.status === "pending";
+  const isDraftPaused = liveDraft.status === "paused";
+  const isLeagueManager = currentUserId === league.owner_id;
+  const isMyTurn = Boolean(currentTurn && currentTurn.member.user_id === currentUserId);
+  const canPick = isDraftActive && isMyTurn && !isPending;
+  const canDraftPlayers = allowedPoolModes.includes("players");
+  const canDraftTeams = allowedPoolModes.includes("teams");
 
   const availableTeams = useMemo(
     () => teams.filter((team) => !draftedTeamIds.has(team.id) && team.name.toLowerCase().includes(normalizedFilter)),
@@ -119,11 +185,48 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
     });
   }
 
+  function handlePauseDraft() {
+    setError(null);
+
+    if (!isLeagueManager) {
+      setError("Only the league manager can pause the draft.");
+      return;
+    }
+
+    if (isDemo) {
+      setLiveDraft((existing) => ({
+        ...existing,
+        status: "paused",
+        updated_at: new Date().toISOString()
+      }));
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const payload = await pauseDraft(liveDraft.id);
+        setLiveDraft(payload.draft as Draft);
+      } catch (pauseError) {
+        setError(pauseError instanceof Error ? pauseError.message : "Unable to pause draft.");
+      }
+    });
+  }
+
   function submitPick(input: { draftableType: "team" | "player"; nationalTeamId?: string; playerId?: string }) {
     if (!currentTurn) return;
 
     if (!isDraftActive) {
       setError("Start the draft before making picks.");
+      return;
+    }
+
+    if (!isMyTurn) {
+      setError("You can only draft during your own turn.");
+      return;
+    }
+
+    if ((input.draftableType === "player" && !canDraftPlayers) || (input.draftableType === "team" && !canDraftTeams)) {
+      setError("This league mode does not allow that pick type.");
       return;
     }
 
@@ -175,7 +278,8 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <Badge className="bg-primary text-primary-foreground">{liveDraft.status}</Badge>
-                {isDemo ? <Badge>Demo mode</Badge> : <Badge>Live realtime</Badge>}
+                {isDemo ? <Badge>Demo mode</Badge> : <Badge>{syncStatus === "live" ? "Live realtime" : "Auto-syncing"}</Badge>}
+                <Badge>{league.scoring_mode === "team_pickem" ? "Teams only" : league.scoring_mode === "player_pickem" ? "Players only" : "Combo"}</Badge>
               </div>
               <CardTitle className="text-2xl">{league.name} Draft</CardTitle>
               <CardDescription>
@@ -183,11 +287,20 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
               </CardDescription>
             </div>
             <div className="flex flex-col gap-2">
-              {isDraftPending ? (
-                <Button className="w-full md:w-auto" disabled={isPending} onClick={handleStartDraft}>
+              {isDraftPending || isDraftPaused ? (
+                <Button className="w-full md:w-auto" disabled={isPending || !isLeagueManager} onClick={handleStartDraft}>
                   <Activity className="h-4 w-4" />
-                  Start Draft
+                  {isDraftPaused ? "Resume Draft" : "Start Draft"}
                 </Button>
+              ) : null}
+              {isDraftActive ? (
+                <Button className="w-full md:w-auto" variant="secondary" disabled={isPending || !isLeagueManager} onClick={handlePauseDraft}>
+                  <Pause className="h-4 w-4" />
+                  Pause Draft
+                </Button>
+              ) : null}
+              {!isLeagueManager && (isDraftPending || isDraftPaused || isDraftActive) ? (
+                <p className="max-w-sm text-xs text-muted-foreground">Only the league manager can start, pause, or resume the draft.</p>
               ) : null}
               {error ? <p className="max-w-sm text-sm text-accent">{error}</p> : null}
             </div>
@@ -198,6 +311,9 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
                   On Clock
                 </div>
                 <div className="mt-1 font-semibold">{currentTurn?.member.display_name ?? "Complete"}</div>
+                {isDraftActive && currentTurn ? (
+                  <div className="text-xs text-muted-foreground">{isMyTurn ? "Your turn" : "Waiting"}</div>
+                ) : null}
               </div>
               <div className="rounded-md border bg-background p-3">
                 <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground">
@@ -243,16 +359,24 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
           <CardHeader className="gap-4 lg:flex lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>Available Draft Pool</CardTitle>
-              <CardDescription>Search and draft from the remaining players or national teams.</CardDescription>
+              <CardDescription>
+                {league.scoring_mode === "team_pickem"
+                  ? "Search and draft from remaining national teams."
+                  : league.scoring_mode === "player_pickem"
+                    ? "Search and draft from remaining players."
+                    : "Search and draft from the remaining players or national teams."}
+              </CardDescription>
             </div>
-            <div className="flex rounded-md border bg-background p-1">
-              <Button type="button" size="sm" variant={poolMode === "players" ? "secondary" : "ghost"} onClick={() => setPoolMode("players")}>
-                Players
-              </Button>
-              <Button type="button" size="sm" variant={poolMode === "teams" ? "secondary" : "ghost"} onClick={() => setPoolMode("teams")}>
-                Teams
-              </Button>
-            </div>
+            {allowedPoolModes.length > 1 ? (
+              <div className="flex rounded-md border bg-background p-1">
+                <Button type="button" size="sm" variant={poolMode === "players" ? "secondary" : "ghost"} onClick={() => setPoolMode("players")}>
+                  Players
+                </Button>
+                <Button type="button" size="sm" variant={poolMode === "teams" ? "secondary" : "ghost"} onClick={() => setPoolMode("teams")}>
+                  Teams
+                </Button>
+              </div>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative">
@@ -281,7 +405,7 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
                       <TableCell className="hidden text-muted-foreground md:table-cell">{player.club ?? "Club TBD"}</TableCell>
                       <TableCell className="text-right">{player.projected_points}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" disabled={isPending || !currentTurn || !isDraftActive} onClick={() => submitPick({ draftableType: "player", playerId: player.id })}>
+                        <Button size="sm" disabled={!canPick} onClick={() => submitPick({ draftableType: "player", playerId: player.id })}>
                           <Check className="h-4 w-4" />
                           Draft
                         </Button>
@@ -311,7 +435,7 @@ export function DraftRoom({ league, members, draft, picks, teams, players, isDem
                       <TableCell>{team.confederation}</TableCell>
                       <TableCell>{team.group_name ?? "TBD"}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" disabled={isPending || !currentTurn || !isDraftActive} onClick={() => submitPick({ draftableType: "team", nationalTeamId: team.id })}>
+                        <Button size="sm" disabled={!canPick} onClick={() => submitPick({ draftableType: "team", nationalTeamId: team.id })}>
                           <Check className="h-4 w-4" />
                           Draft
                         </Button>
