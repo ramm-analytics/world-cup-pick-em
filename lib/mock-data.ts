@@ -8,6 +8,7 @@ export const demoLeague: League = {
   max_members: 8,
   roster_team_slots: 2,
   roster_player_slots: 6,
+  scoring_mode: "combo",
   scoring_rules: {
     team_win: 3,
     team_draw: 1,

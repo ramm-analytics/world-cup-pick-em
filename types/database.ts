@@ -11,6 +11,7 @@ type DbRecord<T> = T & Record<string, unknown>;
 export type DraftableType = "team" | "player";
 export type DraftStatus = "pending" | "active" | "complete";
 export type MatchStage = "group" | "round_of_32" | "round_of_16" | "quarterfinal" | "semifinal" | "third_place" | "final";
+export type LeagueScoringMode = "team_pickem" | "player_pickem" | "combo";
 
 export type NationalTeam = {
   id: string;
@@ -54,6 +55,7 @@ export type Match = {
   home_score: number | null;
   away_score: number | null;
   is_final: boolean;
+  winner_team_id: string | null;
   external_source: string | null;
   external_id: string | null;
   match_number: number | null;
@@ -92,7 +94,31 @@ export type League = {
   max_members: number;
   roster_team_slots: number;
   roster_player_slots: number;
+  scoring_mode: LeagueScoringMode;
   scoring_rules: Json;
+  created_at: string;
+};
+
+export type LeagueScoreRun = {
+  id: string;
+  league_id: string;
+  status: "running" | "success" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  error: string | null;
+};
+
+export type LeagueScoreEvent = {
+  id: string;
+  league_id: string;
+  league_member_id: string;
+  draft_pick_id: string | null;
+  source_type: "team_match" | "player_match";
+  source_id: string;
+  category: string;
+  points: number;
+  description: string;
+  metadata: Json;
   created_at: string;
 };
 
@@ -144,7 +170,10 @@ export type Database = {
     Tables: {
       leagues: {
         Row: DbRecord<League>;
-        Insert: DbRecord<Omit<League, "id" | "invite_code" | "created_at"> & Partial<Pick<League, "id" | "invite_code" | "created_at">>>;
+        Insert: DbRecord<
+          Omit<League, "id" | "invite_code" | "created_at" | "scoring_mode"> &
+            Partial<Pick<League, "id" | "invite_code" | "created_at" | "scoring_mode">>
+        >;
         Update: DbRecord<Partial<League>>;
         Relationships: [];
       };
@@ -180,7 +209,7 @@ export type Database = {
       };
       matches: {
         Row: DbRecord<Match>;
-        Insert: DbRecord<Omit<Match, "id"> & Partial<Pick<Match, "id">>>;
+        Insert: DbRecord<Omit<Match, "id" | "winner_team_id"> & Partial<Pick<Match, "id" | "winner_team_id">>>;
         Update: DbRecord<Partial<Match>>;
         Relationships: [];
       };
@@ -197,6 +226,21 @@ export type Database = {
             Partial<Pick<DataSyncRun, "id" | "started_at" | "finished_at" | "counts" | "error">>
         >;
         Update: DbRecord<Partial<DataSyncRun>>;
+        Relationships: [];
+      };
+      league_score_runs: {
+        Row: DbRecord<LeagueScoreRun>;
+        Insert: DbRecord<
+          Omit<LeagueScoreRun, "id" | "started_at" | "finished_at" | "error"> &
+            Partial<Pick<LeagueScoreRun, "id" | "started_at" | "finished_at" | "error">>
+        >;
+        Update: DbRecord<Partial<LeagueScoreRun>>;
+        Relationships: [];
+      };
+      league_score_events: {
+        Row: DbRecord<LeagueScoreEvent>;
+        Insert: DbRecord<Omit<LeagueScoreEvent, "id" | "created_at"> & Partial<Pick<LeagueScoreEvent, "id" | "created_at">>>;
+        Update: DbRecord<Partial<LeagueScoreEvent>>;
         Relationships: [];
       };
       drafts: {
@@ -217,12 +261,17 @@ export type Database = {
         Row: DbRecord<LeagueStanding>;
         Relationships: [];
       };
+      league_scoring_standings: {
+        Row: DbRecord<LeagueStanding>;
+        Relationships: [];
+      };
     };
     Functions: Record<string, never>;
     Enums: {
       draftable_type: DraftableType;
       draft_status: DraftStatus;
       match_stage: MatchStage;
+      league_scoring_mode: LeagueScoringMode;
     };
   };
 };

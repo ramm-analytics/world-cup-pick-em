@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createLeagueSchema } from "@/lib/league/validators";
+import { defaultScoringRules } from "@/lib/scoring/settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -32,14 +33,8 @@ export async function POST(request: Request) {
       max_members: maxMembers,
       roster_team_slots: 2,
       roster_player_slots: 8,
-      scoring_rules: {
-        team_win: 3,
-        team_draw: 1,
-        team_goal: 1,
-        player_goal: 4,
-        player_assist: 3,
-        clean_sheet: 2
-      }
+      scoring_mode: "combo",
+      scoring_rules: defaultScoringRules
     })
     .select("*")
     .single();
