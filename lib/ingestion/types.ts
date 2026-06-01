@@ -56,8 +56,10 @@ export type MatchInput = {
   stage: "group" | "round_of_32" | "round_of_16" | "quarterfinal" | "semifinal" | "third_place" | "final";
   homeTeamExternalId?: string | null;
   awayTeamExternalId?: string | null;
+  winnerTeamExternalId?: string | null;
   homeTeamFifaCode?: string | null;
   awayTeamFifaCode?: string | null;
+  winnerTeamFifaCode?: string | null;
   startsAt: string;
   homeScore?: number | null;
   awayScore?: number | null;

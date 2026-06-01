@@ -41,6 +41,7 @@ export function mapApiFootballFixtures(fixtures: ApiFootballFixture[]): MatchInp
       stage: stageFromRound(item.league?.round),
       homeTeamExternalId: item.teams.home.id ? String(item.teams.home.id) : null,
       awayTeamExternalId: item.teams.away.id ? String(item.teams.away.id) : null,
+      winnerTeamExternalId: winnerTeamExternalId(item),
       startsAt: item.fixture.date,
       homeScore: item.goals.home,
       awayScore: item.goals.away,
@@ -48,6 +49,12 @@ export function mapApiFootballFixtures(fixtures: ApiFootballFixture[]): MatchInp
       status: item.fixture.status.short,
       venue: [item.fixture.venue?.name, item.fixture.venue?.city].filter(Boolean).join(", ") || null
     }));
+}
+
+function winnerTeamExternalId(item: ApiFootballFixture) {
+  if (item.teams.home.winner === true && item.teams.home.id) return String(item.teams.home.id);
+  if (item.teams.away.winner === true && item.teams.away.id) return String(item.teams.away.id);
+  return null;
 }
 
 export function mapApiFootballPlayers(players: ApiFootballPlayer[]): PlayerInput[] {

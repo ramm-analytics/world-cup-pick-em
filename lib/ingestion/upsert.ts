@@ -127,6 +127,7 @@ export async function upsertMatches(supabase: DbClient, matches: MatchInput[]) {
   const rows = matches.flatMap((match) => {
     const homeTeamId = resolveTeamId(match.externalSource, match.homeTeamExternalId, match.homeTeamFifaCode, teamIdByExternalKey, teamIdByFifaCode);
     const awayTeamId = resolveTeamId(match.externalSource, match.awayTeamExternalId, match.awayTeamFifaCode, teamIdByExternalKey, teamIdByFifaCode);
+    const winnerTeamId = resolveTeamId(match.externalSource, match.winnerTeamExternalId, match.winnerTeamFifaCode, teamIdByExternalKey, teamIdByFifaCode);
 
     if (!homeTeamId || !awayTeamId) {
       return [];
@@ -140,6 +141,7 @@ export async function upsertMatches(supabase: DbClient, matches: MatchInput[]) {
       home_score: match.homeScore ?? null,
       away_score: match.awayScore ?? null,
       is_final: match.isFinal ?? false,
+      winner_team_id: winnerTeamId ?? null,
       external_source: match.externalSource,
       external_id: match.externalId,
       match_number: match.matchNumber ?? null,

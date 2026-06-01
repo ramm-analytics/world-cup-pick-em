@@ -19,18 +19,20 @@ export async function getLeagueDashboard(leagueId = demoLeague.id) {
       picks: demoPicks,
       teams: demoTeams,
       players: demoPlayers,
+      scoreEvents: [],
       isDemo: true
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  const [league, members, standings, draft, teams, players] = await Promise.all([
+  const [league, members, standings, draft, teams, players, scoreEvents] = await Promise.all([
     supabase.from("leagues").select("*").eq("id", leagueId).single(),
     supabase.from("league_members").select("*").eq("league_id", leagueId).order("draft_position"),
-    supabase.from("league_standings").select("*").eq("league_id", leagueId).order("rank"),
+    supabase.from("league_scoring_standings").select("*").eq("league_id", leagueId).order("rank"),
     supabase.from("drafts").select("id").eq("league_id", leagueId).maybeSingle(),
     supabase.from("national_teams").select("*").order("name"),
-    supabase.from("players").select("*, national_teams(name, flag_emoji, fifa_code)").order("name")
+    supabase.from("players").select("*, national_teams(name, flag_emoji, fifa_code)").order("name"),
+    supabase.from("league_score_events").select("*").eq("league_id", leagueId).order("created_at", { ascending: false }).limit(10)
   ]);
 
   const picks = draft.data?.id
@@ -44,6 +46,7 @@ export async function getLeagueDashboard(leagueId = demoLeague.id) {
     picks: picks.data ?? [],
     teams: teams.data ?? [],
     players: players.data ?? [],
+    scoreEvents: scoreEvents.data ?? [],
     isDemo: false
   };
 }
