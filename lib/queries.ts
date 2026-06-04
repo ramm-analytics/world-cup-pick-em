@@ -60,11 +60,13 @@ export async function getDraftRoom(leagueId = demoLeague.id) {
       picks: demoPicks,
       teams: demoTeams,
       players: demoPlayers,
+      currentUserId: demoMembers[0].user_id,
       isDemo: true
     };
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: userResult } = await supabase.auth.getUser();
   const [league, members, draft, teams, players] = await Promise.all([
     supabase.from("leagues").select("*").eq("id", leagueId).single(),
     supabase.from("league_members").select("*").eq("league_id", leagueId).order("draft_position"),
@@ -84,6 +86,7 @@ export async function getDraftRoom(leagueId = demoLeague.id) {
     picks: picks.data ?? [],
     teams: teams.data ?? [],
     players: players.data ?? [],
+    currentUserId: userResult.user?.id ?? null,
     isDemo: false
   };
 }

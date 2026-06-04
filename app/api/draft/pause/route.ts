@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { startDraftSchema } from "@/lib/draft/validators";
-import { draftRoundCountForLeague } from "@/lib/draft/rules";
+import { pauseDraftSchema } from "@/lib/draft/validators";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
-  const payload = startDraftSchema.safeParse(await request.json());
+  const payload = pauseDraftSchema.safeParse(await request.json());
 
   if (!payload.success) {
     return NextResponse.json({ error: "Invalid draft." }, { status: 400 });
@@ -15,7 +14,7 @@ export async function POST(request: Request) {
   const user = userResult.user;
 
   if (!user) {
-    return NextResponse.json({ error: "Sign in before starting the draft." }, { status: 401 });
+    return NextResponse.json({ error: "Sign in before pausing the draft." }, { status: 401 });
   }
 
   const draft = await supabase.from("drafts").select("*").eq("id", payload.data.draftId).single();
@@ -23,25 +22,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Draft not found." }, { status: 404 });
   }
 
-  const league = await supabase.from("leagues").select("*").eq("id", draft.data.league_id).single();
+  const league = await supabase.from("leagues").select("owner_id").eq("id", draft.data.league_id).single();
   if (league.error || !league.data) {
     return NextResponse.json({ error: "League not found." }, { status: 404 });
   }
 
   if (league.data.owner_id !== user.id) {
-    return NextResponse.json({ error: "Only the league manager can start or resume the draft." }, { status: 403 });
+    return NextResponse.json({ error: "Only the league manager can pause the draft." }, { status: 403 });
   }
 
   const updated = await supabase
     .from("drafts")
     .update({
-      status: "active",
-      round_count: draftRoundCountForLeague(league.data),
-      started_at: draft.data.started_at ?? new Date().toISOString(),
+      status: "paused",
       updated_at: new Date().toISOString()
     })
     .eq("id", payload.data.draftId)
-    .in("status", ["pending", "paused"])
+    .eq("status", "active")
     .select("*")
     .single();
 

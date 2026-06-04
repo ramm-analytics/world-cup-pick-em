@@ -9,7 +9,7 @@ export type Json =
 type DbRecord<T> = T & Record<string, unknown>;
 
 export type DraftableType = "team" | "player";
-export type DraftStatus = "pending" | "active" | "complete";
+export type DraftStatus = "pending" | "active" | "paused" | "complete";
 export type MatchStage = "group" | "round_of_32" | "round_of_16" | "quarterfinal" | "semifinal" | "third_place" | "final";
 export type LeagueScoringMode = "team_pickem" | "player_pickem" | "combo";
 

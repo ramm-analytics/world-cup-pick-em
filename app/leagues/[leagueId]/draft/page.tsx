@@ -4,7 +4,7 @@ import { getDraftRoom } from "@/lib/queries";
 
 export default async function DraftPage({ params }: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await params;
-  const { league, members, draft, picks, teams, players, isDemo } = await getDraftRoom(leagueId);
+  const { league, members, draft, picks, teams, players, currentUserId, isDemo } = await getDraftRoom(leagueId);
 
   if (!league || !draft) {
     return <AppShell><div className="container py-10">Draft not found.</div></AppShell>;
@@ -19,6 +19,7 @@ export default async function DraftPage({ params }: { params: Promise<{ leagueId
         picks={picks}
         teams={teams}
         players={players}
+        currentUserId={currentUserId}
         isDemo={isDemo}
       />
     </AppShell>

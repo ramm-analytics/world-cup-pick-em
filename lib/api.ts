@@ -37,3 +37,18 @@ export async function startDraft(draftId: string) {
 
   return response.json();
 }
+
+export async function pauseDraft(draftId: string) {
+  const response = await fetch("/api/draft/pause", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ draftId })
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error: "Unable to pause draft." }));
+    throw new Error(payload.error ?? "Unable to pause draft.");
+  }
+
+  return response.json();
+}
