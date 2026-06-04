@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/sync-world-cup?mode=results",
       "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/admin/recalculate-scores",
+      "schedule": "15 */4 * * *"
     }
   ]
 }

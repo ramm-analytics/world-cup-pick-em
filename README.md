@@ -4,7 +4,7 @@ A clean MVP full-stack fantasy pick'em application for the 2026 FIFA World Cup. 
 
 ## Stack
 
-- Next.js 15 App Router
+- Next.js App Router
 - TypeScript
 - Tailwind CSS
 - shadcn/ui-compatible components
@@ -151,7 +151,7 @@ API_FOOTBALL_LEAGUE_ID=1
 API_FOOTBALL_SEASON=2026
 API_FOOTBALL_DAILY_BUDGET=90
 API_FOOTBALL_MIN_INTERVAL_MS=1500
-OPENFOOTBALL_WORLD_CUP_URL=https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
+OPENFOOTBALL_WORLD_CUP_URL=https://raw.githubusercontent.com/openfootball/worldcup/master/2026--usa/cup.txt
 ```
 
 Run a sync manually:
@@ -165,20 +165,36 @@ curl -X POST http://localhost:3000/api/admin/sync-world-cup \
 
 Supported modes are `baseline`, `api-football-lite`, `api-football-full`, `results`, and `all`. Missing `API_FOOTBALL_KEY` skips API-Football modes without blocking the baseline. `vercel.json` schedules `results` every four hours; Vercel Cron calls the same route with `GET` and the `CRON_SECRET` bearer header.
 
+Scoring can be recalculated through the protected admin route:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/recalculate-scores \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
 ## Deployment
 
-1. Create a Supabase project and run the migration.
+Vercel plus Supabase Cloud is the recommended production path for this hobby-scale app. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the complete beginner checklist.
+
+Short version:
+
+1. Create a Supabase Cloud project and run migrations with `supabase db push`.
 2. Add these Vercel environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `CRON_SECRET`
    - `API_FOOTBALL_KEY` when enrichment is enabled
-3. Deploy to Vercel:
+3. Configure Supabase Auth Site URL and Redirect URLs for localhost and your Vercel domain.
+4. Deploy to Vercel:
 
 ```bash
 vercel
 ```
+
+5. Run the baseline data sync against the deployed URL.
 
 ## MVP Gaps To Expand Later
 
