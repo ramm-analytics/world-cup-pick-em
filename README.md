@@ -163,7 +163,7 @@ curl -X POST http://localhost:3000/api/admin/sync-world-cup \
   -d '{"mode":"baseline"}'
 ```
 
-Supported modes are `baseline`, `api-football-lite`, `api-football-full`, `results`, and `all`. Missing `API_FOOTBALL_KEY` skips API-Football modes without blocking the baseline. `vercel.json` schedules `results` every four hours; Vercel Cron calls the same route with `GET` and the `CRON_SECRET` bearer header.
+Supported modes are `baseline`, `api-football-lite`, `api-football-full`, `results`, and `all`. Missing `API_FOOTBALL_KEY` skips API-Football modes without blocking the baseline. `vercel.json` uses once-daily UTC schedules so the app deploys on Vercel Hobby.
 
 Scoring can be recalculated through the protected admin route:
 

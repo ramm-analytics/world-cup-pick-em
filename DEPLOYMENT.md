@@ -201,9 +201,11 @@ Vercel automatically redeploys when you push to the connected branch.
 `vercel.json` registers:
 
 ```txt
-/api/admin/sync-world-cup?mode=results  every 4 hours
-/api/admin/recalculate-scores           every 4 hours, 15 minutes later
+/api/admin/sync-world-cup?mode=results  daily at 08:00 UTC
+/api/admin/recalculate-scores           daily at 08:15 UTC
 ```
+
+Vercel Hobby only supports cron schedules that run once per day. Keep these daily schedules while the app is on Hobby. If you upgrade Vercel later, you can increase the frequency during the tournament.
 
 Both routes require:
 
@@ -229,6 +231,12 @@ Invoke-RestMethod `
 
 Invoke-RestMethod `
   -Method Post `
+  -Uri "http://localhost:3000/api/admin/sync-world-cup" `
+  -Headers $headers `
+  -Body '{"mode":"baseline"}'
+
+Invoke-RestMethod `
+  -Method Post `
   -Uri "http://localhost:3000/api/admin/recalculate-scores" `
   -Headers $headers `
   -Body '{}'
@@ -237,12 +245,25 @@ Invoke-RestMethod `
 Hosted test:
 
 ```powershell
+$headers = @{
+  Authorization = "Bearer your-production-cron-secret"
+  "Content-Type" = "application/json"
+}
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://your-vercel-domain.vercel.app/api/admin/sync-world-cup" `
+  -Headers $headers `
+  -Body '{"mode":"results"}'
+
 Invoke-RestMethod `
   -Method Post `
   -Uri "https://your-vercel-domain.vercel.app/api/admin/recalculate-scores" `
   -Headers $headers `
   -Body '{}'
 ```
+
+If either hosted request returns `401`, the bearer token does not match the deployed `CRON_SECRET`.
 
 ## Production Migration Safety
 
