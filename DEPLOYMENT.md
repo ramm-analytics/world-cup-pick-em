@@ -48,6 +48,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 Never prefix these with `NEXT_PUBLIC_`.
 
 ```bash
+APP_URL=https://your-vercel-domain.vercel.app
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 CRON_SECRET=use-a-long-random-string
 API_FOOTBALL_KEY=optional-api-football-key
@@ -68,6 +69,7 @@ Important:
 
 - Never commit `.env.local`.
 - Never put `SUPABASE_SERVICE_ROLE_KEY` in client components.
+- In production, `APP_URL` must be your Vercel URL or custom domain with `https://`.
 - `CRON_SECRET` should be a long random value with no spaces or newlines.
 - Do not point production Vercel env vars at `127.0.0.1` Supabase URLs.
 
@@ -171,8 +173,11 @@ Add Redirect URLs:
 
 ```txt
 http://localhost:3000/**
+http://localhost:3000/auth/callback
 https://your-vercel-domain.vercel.app/**
+https://your-vercel-domain.vercel.app/auth/callback
 https://your-future-custom-domain.com/**
+https://your-future-custom-domain.com/auth/callback
 ```
 
 The app uses magic link auth. Magic links return to:
@@ -182,6 +187,14 @@ The app uses magic link auth. Magic links return to:
 ```
 
 If login emails arrive but the link fails, the usual cause is missing Supabase redirect URLs.
+
+If magic links point to `http://localhost:3000/?code=...` in production:
+
+1. In Vercel, set `APP_URL=https://your-vercel-domain.vercel.app`.
+2. In Supabase Auth settings, set Site URL to the same Vercel URL.
+3. In Supabase Auth Redirect URLs, add `https://your-vercel-domain.vercel.app/auth/callback`.
+4. Redeploy or restart the Vercel deployment after changing env vars.
+5. Send a new magic link. Old emails keep the old/bad URL.
 
 ## Vercel Deployment
 
@@ -319,6 +332,7 @@ Vercel:
 
 - Repo connected
 - Env vars added
+- `APP_URL` points at the deployed Vercel/custom domain
 - First deploy succeeded
 - App loads
 - Magic link login works
@@ -345,6 +359,7 @@ Supabase auth redirect not working:
 
 - Add the Vercel domain to Supabase Auth Redirect URLs.
 - Include both local and production callback patterns.
+- Make sure Vercel has `APP_URL` set to the production URL.
 
 API route returns 401:
 
@@ -359,6 +374,7 @@ Database tables missing in production:
 Production app points at local Supabase:
 
 - `NEXT_PUBLIC_SUPABASE_URL` must be `https://...supabase.co`, not `http://127.0.0.1:54321`.
+- `APP_URL` must be `https://your-vercel-domain.vercel.app`, not `http://localhost:3000`.
 
 Service role key exposed:
 

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { env } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function redirectWithMessage(path: string, message: string) {
@@ -18,15 +19,19 @@ function getSafeNext(formData: FormData, fallback = "/profile") {
 }
 
 async function getRequestOrigin() {
+  if (env.appUrl) {
+    return env.appUrl.replace(/\/$/, "");
+  }
+
   const headerStore = await headers();
   const origin = headerStore.get("origin");
 
   if (origin) {
-    return origin;
+    return origin.replace(/\/$/, "");
   }
 
-  const host = headerStore.get("host");
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+  const protocol = headerStore.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
 
   if (!host) {
     throw new Error("Could not determine app URL for auth redirect.");
