@@ -184,6 +184,7 @@ Short version:
 2. Add these Vercel environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `APP_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `CRON_SECRET`
    - `API_FOOTBALL_KEY` when enrichment is enabled
