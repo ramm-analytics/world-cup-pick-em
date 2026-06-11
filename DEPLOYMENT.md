@@ -186,6 +186,20 @@ The app uses magic link auth. Magic links return to:
 /auth/callback
 ```
 
+The app also supports manual email/password account creation and login through Supabase Auth.
+
+For small testing groups where you do not want confirmation emails:
+
+1. In Supabase Dashboard, open Authentication.
+2. Open the Email provider settings.
+3. Keep the Email provider enabled.
+4. Turn off the setting named `Confirm email` or similar.
+5. Save the provider settings.
+
+With email confirmation disabled, new password signup users receive an active session immediately and are redirected into the app without a confirmation email. Magic link login still requires email delivery because the email link is the login credential.
+
+For a wider production launch, consider re-enabling email confirmation or configuring custom SMTP so Supabase email limits do not block onboarding.
+
 If login emails arrive but the link fails, the usual cause is missing Supabase redirect URLs.
 
 If magic links point to `http://localhost:3000/?code=...` in production:
@@ -325,6 +339,8 @@ Supabase Cloud:
 - Migrations applied
 - Auth Site URL configured
 - Redirect URLs configured
+- Email provider enabled
+- `Confirm email` disabled if test users should log in without confirmation emails
 - Realtime enabled for `drafts` and `draft_picks`
 - Baseline World Cup data loaded
 
@@ -336,6 +352,7 @@ Vercel:
 - First deploy succeeded
 - App loads
 - Magic link login works
+- Email/password signup and login work
 - League page works
 - Draft room updates live
 - Scoring/settings pages work

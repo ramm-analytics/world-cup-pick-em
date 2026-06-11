@@ -75,7 +75,7 @@ Migrations live in `supabase/migrations`. The initial schema creates:
 - `player_match_stats`
 - `league_standings` view
 
-The auth MVP migrations add `profiles.username` as the unique handle, use `profiles.name` as the non-unique friendly name, and tighten profile RLS so authenticated users can only read, insert, or update their own profile row. Realtime is enabled for `drafts` and `draft_picks`. The browser draft room subscribes to those tables so other managers see picks and clock changes quickly.
+The auth MVP migrations add `profiles.username` as the unique handle, use `profiles.name` as the non-unique friendly name, and tighten profile RLS so authenticated users can only read, insert, or update their own profile row. The app supports Supabase magic links and Supabase email/password login. For testing without confirmation emails, disable `Confirm email` in the Supabase Auth Email provider settings. Realtime is enabled for `drafts` and `draft_picks`. The browser draft room subscribes to those tables so other managers see picks and clock changes quickly.
 
 Run migrations locally with the Supabase CLI:
 
